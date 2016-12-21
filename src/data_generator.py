@@ -6,7 +6,7 @@ import subprocess as sp
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.misc import imread, imsave, imshow, imresize
+from scipy.misc import imread, imsave, imshow, imresize, imsave
 from skimage import color
 
 from multiprocessing import Pool, cpu_count
@@ -18,61 +18,10 @@ FFPROBE_BIN = "ffprobe"
 # VID_DIR = "/media/neil/Neil's 5TB HDD/deep-motion_data/youtube-8m-videos"
 VID_DIR = "/media/neil/Neil's 240GB SSD/deep-motion_data/youtube-8m-videos"
 
+KITTI_VID_DIR = "/media/neil/Neil's 240GB SSD/deep-motion_data/KITTI_RAW/train/"
+
 FRAME_DISTS = [3, 5, 7, 9]
 
-# random.seed()
-# random.shuffle(files)
-#
-# frames = np.zeros(shape=(50, 3, 720, 1280, 3))
-#
-# start_time = time.time()
-# for i in range(len(files[:50])):
-#     # cap = cv2.VideoCapture(os.path.join(VID_DIR, files[i]))
-#
-#     # frame_num = np.random.randint(0, cap.get(cv2.CAP_PROP_FRAME_COUNT)
-#     # num_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-#     frame_num = 200
-#
-#     command = [FFPROBE_BIN, '-show_format', '-loglevel', 'warning', os.path.join(VID_DIR, files[i])]
-#     pipe = sp.Popen(command, stdout=sp.PIPE)
-#     pipe.stdout.readline()
-#     pipe.terminate()
-#     infos = pipe.stdout.read()
-#     duration_index = infos.find("duration=") + 9
-#     duration_length = infos[duration_index:].find("\nsize=")
-#     duration = float(infos[duration_index:duration_index+duration_length])
-#     # rand_time = random.uniform(0.0, duration-1)
-#     command = [FFMPEG_BIN,
-#                '-ss', '2.123456',
-#                # '-ss', str(rand_time),
-#                '-i', os.path.join(VID_DIR, files[i]),
-#                '-frames:v', '3',
-#                '-f', 'image2pipe',
-#                '-pix_fmt', 'rgb24',
-#                '-loglevel', 'warning',
-#                '-vcodec', 'rawvideo', '-']
-#     pipe = sp.Popen(command, stdout=sp.PIPE, bufsize=10 ** 8)
-#     # read 1280*720*3 bytes (= 1 frame)
-#     raw_image = pipe.stdout.read(1280 * 720 * 3 * 3)
-#
-#     # transform the byte read into a numpy array
-#     frames[i, :] = np.fromstring(raw_image, dtype='uint8').reshape((3, 720, 1280, 3))
-#     # throw away the data in the pipe's buffer.
-#     pipe.stdout.flush()
-#
-#     # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
-#     # ret, frame = cap.read()
-#     # frames[i, 0] = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#     # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num+1)
-#     # ret, frame = cap.read()
-#     # frames[i, 1] = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#     # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num+2)
-#     # ret, frame = cap.read()
-#     # frames[i, 2] = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#
-#
-# print "Done in", time.time() - start_time, "seconds."
-# a = 0
 
 # min/max_zoom can be either:
 #  - tuple of ints for zoomed image size (must be proportional to original image size,
@@ -95,6 +44,7 @@ def zoom(im, min_zoom, max_zoom, rand_seed=None):
     im = imresize(im, zoom_factor)
 
     return im
+
 
 def crop(im, crop_size, crop_corner_loc="center", random_crop_amount=1.0, rand_seed=None):
     np.random.seed(rand_seed)
@@ -138,6 +88,7 @@ def crop(im, crop_size, crop_corner_loc="center", random_crop_amount=1.0, rand_s
 
     return im
 
+
 # Takes in a batch of images, and augments them (normal version, doesn't use multiprocessing. Better when not image aug is disabled)
 def transform_batch(batch, num_channels, final_im_size):
     batch_trans = np.zeros(shape=(len(batch), num_channels) + final_im_size)
@@ -168,6 +119,7 @@ def transform_batch_parallel(batch, num_channels, final_im_size):
 
     return batch_trans
 
+
 def transform_im(num_channels, final_im_size, batch_i):
     im = batch_i[0]
     rand_seed = batch_i[1]
@@ -175,20 +127,22 @@ def transform_im(num_channels, final_im_size, batch_i):
     if num_channels == 1:
         im = color.rgb2gray(im)
 
-    im = zoom(im, min_zoom=final_im_size, max_zoom=1.0, rand_seed=rand_seed)
+    # im = zoom(im, min_zoom=final_im_size, max_zoom=1.0, rand_seed=rand_seed)
+    im = imresize(im, final_im_size)
     im = crop(im, crop_size=final_im_size, crop_corner_loc="random", random_crop_amount=1.0, rand_seed=rand_seed)
 
     im = np.transpose(im, (2, 0, 1))
 
     return im
 
+
 def batch_generator(batch_size, num_channels, batch_image_size):
     vid_list = os.listdir(VID_DIR)
 
     while 1:
         if batch_image_size == "random":
-            batch_im_size_mult = random.randint(4, 80)
-            batch_im_size = (9*batch_im_size_mult, 16*batch_im_size_mult)
+            batch_image_size_mult = random.randint(4, 80)
+            batch_image_size = (9*batch_image_size_mult, 16*batch_image_size_mult)
 
         first_frame_batch = np.zeros(shape=(batch_size, 720, 1280, 3), dtype="uint8")
         middle_frame_batch = np.zeros(shape=(batch_size, 720, 1280, 3), dtype="uint8")
@@ -196,7 +150,8 @@ def batch_generator(batch_size, num_channels, batch_image_size):
 
         random.seed()
         frame_dist = random.choice(FRAME_DISTS)
-        for i in range(batch_size):
+        i = 0
+        while i < batch_size:
             vid_path = os.path.join(VID_DIR, random.choice(vid_list))
             command = [FFPROBE_BIN, '-show_format', '-loglevel', 'warning', vid_path]
             pipe = sp.Popen(command, stdout=sp.PIPE)
@@ -228,29 +183,136 @@ def batch_generator(batch_size, num_channels, batch_image_size):
             # throw away the data in the pipe's buffer.
             pipe.stdout.flush()
 
+            dif = np.mean(np.abs((last_frame_batch[i] / 255.) - (first_frame_batch[i] / 255.)))
+            if dif < 0.02 or dif > 0.2:
+                continue
+
+            # print dif
+            # X_blend = (first_frame_batch[i]/255. + last_frame_batch[i]/255.) * 255. / 2
+            # plt.figure()
+            # plt.title("First Frame")
+            # plt.imshow(X_blend.astype("uint8"))
+
+            i += 1
+
         rand_seeds = random.sample(range(0, 2048), batch_size) * 3
         batch_before_transform = zip(list(np.concatenate((first_frame_batch, last_frame_batch, middle_frame_batch))), rand_seeds)
-        batch_after_transform = transform_batch_parallel(batch_before_transform, num_channels=num_channels, final_im_size=batch_im_size)
+        batch_after_transform = transform_batch_parallel(batch_before_transform, num_channels=num_channels, final_im_size=batch_image_size)
         # batch_after_transform = transform_batch(batch_before_transform, num_channels=NUM_CHANNELS, final_im_size=batch_im_size)
 
         X_batch = np.concatenate((batch_after_transform[:batch_size], batch_after_transform[batch_size:batch_size*2]), axis=1)
         y_batch = batch_after_transform[batch_size*2:]
 
-        yield X_batch, y_batch
+        yield X_batch.astype("float32") / 255., y_batch.astype("float32") / 255.
+
+
+def kitti_batch_generator(batch_size, frame_dists=(2, 4, 6), data_aug=True):
+    raw_im_list = open(os.path.join(KITTI_VID_DIR, "im_list.txt")).read().splitlines()
+    im_list = []
+    for im in raw_im_list:
+        if not int(im.split('/')[-1].split('.')[0]) < max(frame_dists):
+            im_list.append(im)
+
+    while 1:
+        X = np.zeros(shape=(batch_size, 128, 384, 6), dtype="uint8")
+        y = np.zeros(shape=(batch_size, 128, 384, 3), dtype="uint8")
+        for batch_i in range(batch_size):
+            random.seed()
+            im_path = random.choice(im_list)
+            frame_dist = random.choice(frame_dists)
+            frame_num = int(im_path.split('/')[-1].split('.')[0])
+            X[batch_i, :, :, :3] = imread(os.path.join(KITTI_VID_DIR, '/'.join(im_path.split('/')[:-1]), str(frame_num-frame_dist).zfill(10) + ".png"))[:, 20:404, :]
+            X[batch_i, :, :, 3:] = imread(os.path.join(KITTI_VID_DIR, '/'.join(im_path.split('/')[:-1]), str(frame_num).zfill(10) + ".png"))[:, 20:404, :]
+            y[batch_i] = imread(os.path.join(KITTI_VID_DIR, '/'.join(im_path.split('/')[:-1]), str(frame_num-(frame_dist/2)).zfill(10) + ".png"))[:, 20:404, :]
+
+            if data_aug:
+                if random.randint(0, 1):
+                    X[batch_i, :, :, :3] = np.fliplr(X[batch_i, :, :, :3])
+                    X[batch_i, :, :, 3:] = np.fliplr(X[batch_i, :, :, 3:])
+                    y[batch_i] = np.fliplr(y[batch_i])
+
+                if random.randint(0, 1):
+                    X[batch_i, :, :, :3] = np.flipud(X[batch_i, :, :, :3])
+                    X[batch_i, :, :, 3:] = np.flipud(X[batch_i, :, :, 3:])
+                    y[batch_i] = np.flipud(y[batch_i])
+
+        yield np.transpose(X, (0, 3, 1, 2)).astype("float32") / 255., np.transpose(y, (0, 3, 1, 2)).astype("float32") / 255.
+
 
 def main():
+    # X, y = kitti_batch_generator(500).next()
+    # np.save("X_val_KITTI.npy", X)
+    # np.save("y_val_KITTI.npy", y)
+
+
+    # total = 95403
+    # count = 0
+    # im_list = []
+    # for path, subdirs, files in os.walk(KITTI_VID_DIR):
+    #     for name in files:
+    #         fn = os.path.join(path, name)
+    #         if fn.endswith(".png"):
+    #             im_list.append(fn[len(KITTI_VID_DIR):])
+    #             # im = imread(fn)
+    #             # print im.shape
+    #             # if not (im.shape[1] * 128.0) / im.shape[0] >= 423 and (im.shape[1] * 128.0) / im.shape[0] <= 425:
+    #             # if im.shape != (128, 424, 3):
+    #             #     print "FAIL", fn
+    #                 # continue
+    #             # imsave(fn, imresize(im, (128, 424)))
+    #             # print count
+    #             count += 1
+    # print '\n'.join(im_list)
+    # exit()
+
+    # raw_input("go")
+    # core = 6
+    # im_i = 1
+    # # for im_fn in im_list[core*11926:(core+1)*11926]:
+    # for im_fn in im_list[core*11926+5000:(core+1)*11926]:
+    #     im = imread(im_fn)
+    #     if im.shape != (128, 424, 3):
+    #         print "HERE"
+    #         imsave(im_fn, imresize(im, (128, 424)))
+    #     print im_i, "images done"
+    #     im_i += 1
+
+    # files = os.listdir(".")
+    #
+    # X = np.zeros(shape=(120000, 6, 36, 64), dtype="uint8")
+    # y = np.zeros(shape=(120000, 3, 36, 64), dtype="uint8")
+    # j = 0
+    # for i in range(len(files)):
+    #     if files[i].startswith("X_CORE"):
+    #
+    #         X[j*100:(j+1)*100] = np.load(files[i]).astype("uint8")
+    #         y[j*100:(j+1)*100] = np.load("y"+files[i][1:]).astype("uint8")
+    #         j += 1
+    #
+    # from sklearn.utils import shuffle
+    # (X, y) = shuffle(X, y)
+    #
+    # np.save("X_small_train", X[:100000])
+    # np.save("y_small_train", y[:100000])
+    # np.save("X_small_val", X[100000:110000])
+    # np.save("y_small_val", y[100000:110000])
+    # np.save("X_small_test", X[110000:120000])
+    # np.save("y_small_test", y[110000:120000])
+
     start_time = time.time()
     i = 0
     batch_start_time = time.time()
     BATCH_SIZE = 100
     MAX_BATCHES = 100000 / BATCH_SIZE
 
-    gen = batch_generator(batch_size=BATCH_SIZE, num_channels=3, batch_image_size=(36, 64))
+    gen = kitti_batch_generator(200)
+    # gen = batch_generator(batch_size=BATCH_SIZE, num_channels=3, batch_image_size=(36, 64))
     # for X, y in batch_generator(batch_size=BATCH_SIZE, num_channels=3, batch_image_size = "random"):
     while i < MAX_BATCHES:
         try:
             X, y = gen.next()
         except:
+            print "ERROR: BATCH GEN FAILED, skipping..."
             continue
         print "Time for batch:", time.time() - batch_start_time, "seconds"
 
@@ -258,22 +320,26 @@ def main():
         print y.shape
         print i
 
-        np.save("X_small_train_" + str(i), X)
-        np.save("y_small_train_" + str(i), y)
+        # np.save("X_CORE1_small_train_" + str(i), X)
+        # np.save("y_CORE1_small_train_" + str(i), y)
 
-        # # # code to inspect images in batch
-        # for i in range(len(X)):
-        #     X_0 = X[i, :3, :, :]
-        #     X_1 = X[i, 3:, :, :]
-        #     plt.figure()
-        #     plt.title("First Frame")
-        #     plt.imshow(np.transpose(X_0, (1, 2, 0)).astype("uint8"))
-        #     plt.figure()
-        #     plt.title("Middle Frame")
-        #     plt.imshow(np.transpose(y[i], (1, 2, 0)).astype("uint8"))
-        #     plt.figure()
-        #     plt.title("Last Frame")
-        #     plt.imshow(np.transpose(X_1, (1, 2, 0)).astype("uint8"))
+        # # code to inspect images in batch
+        for i in range(len(X)):
+            X_0 = X[i, :3, :, :]
+            X_1 = X[i, 3:, :, :]
+            X_blend = (X_0 + X_1) * 255. / 2
+            plt.figure()
+            plt.title("First Frame")
+            plt.imshow((np.transpose(X_0, (1, 2, 0))*255).astype("uint8"))
+            plt.figure()
+            plt.title("Middle Frame")
+            plt.imshow((np.transpose(y[i], (1, 2, 0))*255).astype("uint8"))
+            plt.figure()
+            plt.title("Last Frame")
+            plt.imshow((np.transpose(X_1, (1, 2, 0))*255).astype("uint8"))
+            plt.figure()
+            plt.title("Blended")
+            plt.imshow(np.transpose(X_blend, (1, 2, 0)).astype("uint8"))
 
         # if i % 10 == 0:
         #     print "myBatchGenerator:", i, "batches done in", (time.time() - start_time) / 60.0, "minutes..."
