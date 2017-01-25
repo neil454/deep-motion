@@ -1,9 +1,9 @@
 # Deep Motion: A Convolutional Neural Network for Frame Interpolation
 Use a DCNN to perform frame interpolation.
 
-Paper: `deep-motion_paper.pdf`
+Paper: [Deep Motion: A Convolutional Neural Network for Frame Interpolation](https://github.com/neil454/deep-motion/raw/master/deep-motion_paper.pdf)
 
-Based off of the U-Net architecture
+Based off of the [U-Net](https://arxiv.org/abs/1505.04597) architecture
 
 <img src="http://lmb.informatik.uni-freiburg.de/people/ronneber/u-net/u-net-architecture.png" alt="alt text" width="750" height="500">
 
@@ -19,20 +19,22 @@ Based off of the U-Net architecture
 ## Model Weights
 Download the model weights in the `weights/` folder. They're in multiple archive files to get around GitHub's 100MB filesize limit.
 
-*Note that the weights are trained using the architecture defined in FI_unet.py/get_unet_2(), which requires input of shape=(6, 128, 384), due to the use of Batch Normalization (probably could do without that)
+*Note that the weights are trained using the architecture defined in `FI_unet.py/get_unet_2()`, which requires input of shape=(6, 128, 384), due to the use of Batch Normalization (probably could do without that)
 
 
 ## Training
-Details in train.py. It's Keras, so don't worry ;)
+Details in `train.py`. It's Keras, so don't worry ;)
 
 
 ## Testing
-For images, look at DO_TESTING section of train.py
+For images, look at `DO_TESTING` section of `train.py`
 
-For videos, you can use fps_convert.py to double/quadruple/etc the FPS of any video
+For videos, you can use `fps_convert.py` to double/quadruple/etc the FPS of any video
 
 
 ## Results
-View the paper, `deep-motion_paper.pdf`
+![](https://raw.githubusercontent.com/neil454/deep-motion/master/results/planet_earth_interpolation_results.gif)
+
+View the results at the end of the [paper](https://github.com/neil454/deep-motion/raw/master/deep-motion_paper.pdf)
 
 Watch the [presentation video](https://www.youtube.com/watch?v=RWaWoQWI4ks)
