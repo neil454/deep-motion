@@ -38,3 +38,5 @@ For videos, you can use `fps_convert.py` to double/quadruple/etc the FPS of any 
 View the results at the end of the [paper](https://github.com/neil454/deep-motion/raw/master/deep-motion_paper.pdf)
 
 Watch the [presentation video](https://www.youtube.com/watch?v=RWaWoQWI4ks)
+
+[Presentation Slides](https://github.com/neil454/deep-motion/raw/master/deep-motion_slides.pdf)
