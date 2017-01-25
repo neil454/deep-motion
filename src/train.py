@@ -1,3 +1,19 @@
+# Script to train a CNN to do image interpolation using Keras
+# After experimentation, I've settled on the following network architecture and training scheme:
+#  - Using a modified version of U-Net
+#       (because of the addition of batch normalization layers, the network inputs must be a fixed shape,
+#       for some given model weights. Kind of defeats the purpose of using a fully-convolutional network,
+#       but I ran out of time. Maybe in the future I will improve the architecture,
+#       and remove batch norm so variable sized inputs work.)
+#
+#       In any case, the provided weights:
+#           "weights_unet2_finetune_youtube_100epochs.hdf5"
+#       are trained with this architecture, so the input must be 6x128x384
+#  - Adam optimizer with a learning rate of 0.0001 (dynamic), batch size of 16
+#  - Optimizing the charbonnier loss function
+#  - Training on the KITTI dataset at first, then finetuning on YouTube-8M
+
+
 import sys
 import os
 
@@ -45,6 +61,8 @@ def np_array_batch_generator(X, y, batch_size):
 
 def main():
     ##### DATA SETUP #####
+    # the only pre-processing is to divide by 255, to make pixel values between 0 and 1
+
     # X_train = np.load("X_small_train.npy")[:500, :, :32].astype("float32") / 255.
     # y_train = np.load("y_small_train.npy")[:500, :, :32].astype("float32") / 255.
     # X_val = np.load("X_small_val.npy")[:1000, :, :32].astype("float32") / 255.
@@ -80,6 +98,7 @@ def main():
 
 
     if DO_TESTING:
+        # Do predictions using weights for network trained on just the KITTI dataset
         model.load_weights("./../model_weights/weights_kitti_167plus25epochs_unet2_ch_pt03136_best_but_fixed_imsize.hdf5")
         # X, y = batch_generator(50, NUM_CHANNELS, batch_image_size=(128, 384)).next()
         X, y = kitti_batch_generator(50).next()
@@ -89,6 +108,7 @@ def main():
         # y = y_train
         y_pred = model.predict(X, batch_size=BATCH_SIZE, verbose=1)
 
+        # Do second predictions on more refined weights, finetuned on YouTube-8M
         model.load_weights("./../model_weights/weights_unet2_finetune_youtube_100epochs.hdf5")
 
         y_pred_2 = model.predict(X, batch_size=BATCH_SIZE, verbose=1)
@@ -177,5 +197,6 @@ def main():
 
     # OPTION 3: train on some memory-loaded data
     # hist = model.fit(x=X_train, y=y_train, batch_size=BATCH_SIZE, nb_epoch=NUM_EPOCHS, callbacks=callbacks, validation_data=(X_val, y_val), shuffle=True)
+
 if __name__ == '__main__':
     main()

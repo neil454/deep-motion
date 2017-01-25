@@ -1,3 +1,5 @@
+# more experimentation with U-Net as a base
+# see get_unet_2() for final network decision
 
 from keras.layers import Layer, Input, Convolution2D, MaxPooling2D, UpSampling2D, merge, BatchNormalization, Deconvolution2D, Activation
 from keras.layers.advanced_activations import PReLU
@@ -146,7 +148,7 @@ def deconv_block(input, nb_filter, output_shape):
     relu3 = Activation("relu")(conv2)
     return relu3
 
-# never got better results than unet_2, even though it's more organized...
+# never got better results than unet_2, even though it's more organized (less error prone)...
 def get_unet_3(input_shape, batch_size):
     input = Input(input_shape)
     conv_block1 = conv_block(input=input, nb_filter=96)

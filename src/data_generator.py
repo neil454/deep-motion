@@ -1,9 +1,12 @@
+# This file handles data fetching/generation/augmentation for both KITTI and YouTube-8M datasets
+# Contains two generator functions for the two datasets, useful when used with Keras's fitgenerator() method
+
 import sys
 import os
 import time
 import random
 import subprocess as sp
-import cv2
+# import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.misc import imread, imsave, imshow, imresize, imsave
@@ -15,7 +18,7 @@ from functools import partial
 FFMPEG_BIN = "ffmpeg"
 FFPROBE_BIN = "ffprobe"
 
-# VID_DIR = "/media/neil/Neil's 5TB HDD/deep-motion_data/youtube-8m-videos"
+# VID_DIR = "/media/neil/Neil's 5TB HDD/deep-motion_data/youtube-8m-videos"     # HDD too slow -_-
 VID_DIR = "/media/neil/Neil's 240GB SSD/deep-motion_data/youtube-8m-videos"
 
 KITTI_VID_DIR = "/media/neil/Neil's 240GB SSD/deep-motion_data/KITTI_RAW/train/"
@@ -23,6 +26,7 @@ KITTI_VID_DIR = "/media/neil/Neil's 240GB SSD/deep-motion_data/KITTI_RAW/train/"
 FRAME_DISTS = [3, 5, 7, 9]
 
 
+# image augmentation function for random rescaling of image
 # min/max_zoom can be either:
 #  - tuple of ints for zoomed image size (must be proportional to original image size,
 #  - float for zoom factor
@@ -45,7 +49,7 @@ def zoom(im, min_zoom, max_zoom, rand_seed=None):
 
     return im
 
-
+# image augmentation function for random cropping of image
 def crop(im, crop_size, crop_corner_loc="center", random_crop_amount=1.0, rand_seed=None):
     np.random.seed(rand_seed)
 
@@ -119,7 +123,7 @@ def transform_batch_parallel(batch, num_channels, final_im_size):
 
     return batch_trans
 
-
+# image augmentation function (change augmentation options here)
 def transform_im(num_channels, final_im_size, batch_i):
     im = batch_i[0]
     rand_seed = batch_i[1]
@@ -135,7 +139,7 @@ def transform_im(num_channels, final_im_size, batch_i):
 
     return im
 
-
+# use FFMPEG to load batches of samples from YouTube-8M
 def batch_generator(batch_size, num_channels, batch_image_size):
     vid_list = os.listdir(VID_DIR)
 
@@ -206,6 +210,7 @@ def batch_generator(batch_size, num_channels, batch_image_size):
         yield X_batch.astype("float32") / 255., y_batch.astype("float32") / 255.
 
 
+# batch of samples generator for KITTI dataset (much easier since KITTI are just image sequences)
 def kitti_batch_generator(batch_size, frame_dists=(2, 4, 6), data_aug=True):
     raw_im_list = open(os.path.join(KITTI_VID_DIR, "im_list.txt")).read().splitlines()
     im_list = []
@@ -240,6 +245,7 @@ def kitti_batch_generator(batch_size, frame_dists=(2, 4, 6), data_aug=True):
 
 
 def main():
+    # TODO should clean this up? Meant for debugging...
     # X, y = kitti_batch_generator(500).next()
     # np.save("X_val_KITTI.npy", X)
     # np.save("y_val_KITTI.npy", y)
@@ -349,7 +355,6 @@ def main():
 
         batch_start_time = time.time()
     print time.time() - start_time
-
 
 
 if __name__ == '__main__':

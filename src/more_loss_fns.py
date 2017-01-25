@@ -1,3 +1,6 @@
+# This file contains my custom loss functions I experimented with
+# look at charbonnier() to see the loss function I decided to go with
+
 import numpy as np
 from keras import objectives
 from keras import backend as K

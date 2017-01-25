@@ -1,3 +1,5 @@
+# script to download youtube videos from a list of IDs
+
 from __future__ import unicode_literals
 import os
 import youtube_dl

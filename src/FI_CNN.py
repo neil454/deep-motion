@@ -1,3 +1,5 @@
+# not using these models anymore
+
 from keras.layers import Input, Convolution2D, MaxPooling2D, UpSampling2D, BatchNormalization
 from keras.models import Sequential, Model
 

@@ -1,3 +1,4 @@
+# script to scrape YouTube IDs from YouTube-8M dataset (we want to download the videos manually for this project)
 # adapted from http://codegists.com/snippet/python/youtube-8m-video-id-scraperpy_josephredfern_python
 
 import os
