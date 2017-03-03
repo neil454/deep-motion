@@ -17,9 +17,9 @@ Based off of the [U-Net](https://arxiv.org/abs/1505.04597) architecture
 
 
 ## Model Weights
-Download the model weights in the `weights/` folder. They're in multiple archive files to get around GitHub's 100MB filesize limit.
+Download the model weights [here](https://github.com/neil454/deep-motion/releases/download/0.1/weights_unet2_finetune_youtube_100epochs.hdf5).
 
-*Note that the weights are trained using the architecture defined in `FI_unet.py/get_unet_2()`, which requires input of shape=(6, 128, 384), due to the use of Batch Normalization (probably could do without that)
+*Note that the weights are trained using the architecture defined in `FI_unet.py/get_unet_2()`, which requires input of `shape=(6, 128, 384)`, due to the use of Batch Normalization (probably could do without that)
 
 
 ## Training
